@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7c3aed">
+<title>Aventuras do Saber</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;font-family:"Comic Sans MS","Trebuchet MS",system-ui,sans-serif;background:linear-gradient(160deg,#a78bfa,#f472b6 60%,#fbbf24);color:#1e1b4b}
+.tela{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;overflow-y:auto}
+.tela.on{display:flex}
+h1{margin:0;color:#fff;font-size:1.8rem;text-align:center;text-shadow:0 3px 0 #7c3aed}
+.card{background:#fff;border-radius:28px;padding:18px;width:100%;max-width:460px;text-align:center;box-shadow:0 8px 0 rgba(0,0,0,.15)}
+.btn{font:inherit;font-size:1.25rem;font-weight:bold;color:#fff;background:#22c55e;border:0;border-radius:22px;padding:16px;width:100%;max-width:460px;box-shadow:0 6px 0 #15803d;cursor:pointer;touch-action:manipulation}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #15803d}
+.b2{background:#8b5cf6;box-shadow:0 6px 0 #5b21b6}.b3{background:#0ea5e9;box-shadow:0 6px 0 #0369a1}.b4{background:#f97316;box-shadow:0 6px 0 #c2410c}
+.top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:460px;color:#fff;font-weight:bold;font-size:1.1rem}
+.mini{font:inherit;font-size:1.1rem;background:#fff;border:0;border-radius:16px;padding:8px 14px;box-shadow:0 4px 0 rgba(0,0,0,.2);cursor:pointer;color:#312e81}
+.vis{min-height:90px;font-size:2rem;line-height:1.5;word-break:break-word}
+.it{display:inline-block;position:relative;margin:1px}
+.it.risc{opacity:.35}
+.it.risc::after{content:"✕";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#dc2626;font-size:1.8rem;font-weight:900}
+.enun{font-size:1.15rem;font-weight:bold;margin-top:10px;line-height:1.4}
+.ops{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:460px}
+.op{font:inherit;font-size:1.3rem;font-weight:bold;color:#312e81;background:#fff;border:4px solid #c4b5fd;border-radius:22px;padding:16px 8px;box-shadow:0 5px 0 #c4b5fd;cursor:pointer;touch-action:manipulation}
+.op:disabled{cursor:default}
+.op.certo{border-color:#22c55e;background:#dcfce7;animation:pop .5s}
+.op.errado{border-color:#f87171;background:#fee2e2;opacity:.6;animation:shake .4s}
+.op.dica{border-color:#fbbf24;animation:pulse 1s infinite}
+.msg{min-height:56px;max-width:460px;color:#fff;font-size:1.1rem;font-weight:bold;text-align:center;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+.big{font-size:5rem}
+canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9}
+.b5{background:#ec4899;box-shadow:0 6px 0 #9d174d}
+#nome{font:inherit;font-size:1.1rem;text-align:center;width:100%;max-width:460px;padding:12px;border:3px solid #c4b5fd;border-radius:16px;margin-top:10px}
+.grade{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:460px}
+.ade{background:#fff;border-radius:20px;font-size:2.2rem;aspect-ratio:1;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 0 rgba(0,0,0,.15)}
+.ade.lock{opacity:.5;filter:grayscale(1)}
+#resumo{font-weight:bold;margin:10px 0 0;color:#7c3aed}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@keyframes pulse{50%{transform:scale(1.06)}}
+@keyframes pop{50%{transform:scale(1.1)}}
+</style>
+</head>
+<body>
+<section id="menu" class="tela on">
+  <h1>🦉 Aventuras do Saber</h1>
+  <div class="card"><div class="big">🦉</div><p style="font-size:1.15rem;margin:6px 0 0"><b id="ola">Olá, amiguinho!</b><br>Escute a história e escolha a resposta certa.</p><input id="nome" maxlength="15" placeholder="Qual é o seu nome?" onchange="nomeMudou(this.value)"><p id="resumo"></p></div>
+  <button class="btn" onclick="iniciar('m')">🔢 Matemática</button>
+  <button class="btn b2" onclick="iniciar('p')">🔤 Português</button>
+  <button class="btn b3" onclick="iniciar('l')">🧩 Lógica</button>
+  <button class="btn b4" onclick="iniciar('t')">🌈 Tudo misturado</button>
+  <button class="btn b5" onclick="mostrarAdes()">🏅 Meus adesivos</button>
+</section>
+
+<section id="jogo" class="tela">
+  <div class="top"><button class="mini" onclick="tela('menu')">🏠</button><span id="prog"></span><span id="pts"></span></div>
+  <div class="card">
+    <div id="vis" class="vis"></div>
+    <div id="enun" class="enun"></div>
+    <button class="mini" style="margin-top:10px" onclick="falarPerg()">🔊 Ouvir de novo</button>
+  </div>
+  <div id="ops" class="ops"></div>
+  <div id="msg" class="msg"></div>
+  <button id="prox" class="btn" style="display:none" onclick="prox()">Próxima ➜</button>
+</section>
+
+<section id="fim" class="tela">
+  <div class="big">🏆</div>
+  <h1 id="final"></h1>
+  <div id="novo" class="big"></div>
+  <p id="ganhou" class="msg"></p>
+  <button class="btn" onclick="iniciar(cat)">Jogar de novo</button>
+  <button class="btn b2" onclick="tela('menu')">Menu</button>
+</section>
+<section id="ades" class="tela">
+  <h1>🏅 Meus adesivos</h1>
+  <div id="grade" class="grade"></div>
+  <p style="color:#fff;font-weight:bold;margin:0">Ganhe um adesivo acertando 3 ou mais!</p>
+  <button class="btn" onclick="tela('menu')">Voltar</button>
+</section>
+<canvas id="fx"></canvas>
+
+<script>
+const Q=[
+{c:'m',s:'João levou um bloco com 10 fatias de pão para a casa da vó. Eles comeram 4 fatias. Quantas fatias sobraram?',v:'🍞',n:10,r:4,o:[4,6,7,14],a:6,h:['Conte as fatias do bloco uma por uma, com o dedinho.','Veja as fatias riscadas: elas foram comidas. Quantas ainda estão inteiras?','Dica final: comece no 10 e conte para trás quatro vezes: 9, 8, 7, 6!']},
+{c:'m',s:'Maria tinha 3 balões. A tia deu mais 2 balões para ela. Quantos balões Maria tem agora?',v:'🎈',n:5,r:0,o:[3,4,5,6],a:5,h:['Conte primeiro os 3 balões que Maria já tinha.','Agora some os 2 balões que a tia deu. Conte todos juntos!','Dica final: a partir do 3, conte mais dois: 4, 5!']},
+{c:'m',s:'Pedro tinha 5 bolinhas e deu 2 para o amigo. Quantas bolinhas sobraram com Pedro?',v:'🔴',n:5,r:2,o:[2,3,5,7],a:3,h:['Conte as bolinhas que Pedro tinha no começo.','As 2 bolinhas riscadas foram para o amigo. Quantas sobraram?','Dica final: comece no 5 e conte para trás duas vezes: 4, 3!']},
+{c:'m',s:'Na árvore tinha 7 maçãs. Caíram 3 no chão. Quantas maçãs ficaram na árvore?',v:'🍎',n:7,r:3,o:[3,4,7,10],a:4,h:['Conte as 7 maçãs que estavam na árvore.','As 3 maçãs riscadas caíram no chão. Quantas ainda estão penduradas?','Dica final: comece no 7 e conte para trás três vezes: 6, 5, 4!']},
+{c:'m',s:'Ana colheu 6 flores e depois colheu mais 4 flores. Quantas flores ela tem agora?',v:'🌸',n:10,r:0,o:[8,9,10,12],a:10,h:['Conte as primeiras 6 flores.','Agora continue contando as 4 flores que Ana colheu depois.','Dica final: a partir do 6, conte mais quatro: 7, 8, 9, 10!']},
+{c:'p',s:'Qual figura começa com a letra P?',v:'🔤',n:0,o:['🍇 UVA','🐷 PORCO','🍎 MAÇÃ'],a:'🐷 PORCO',h:['Diga o nome de cada figura em voz alta.','Escute o primeiro som de cada palavra: PPP de PORCO!','Dica final: procure o bichinho cujo nome começa com P, como PORCO!']},
+{c:'p',s:'Quantas sílabas tem a palavra GATO?',v:'🐱',n:0,o:[1,2,3,4],a:2,h:['Fale a palavra devagar: GA... TO.','Cada pedacinho que você fala é uma sílaba. Quantos pedacinhos são?','Dica final: bata palminhas enquanto fala: GA (palma), TO (palma)!']},
+{c:'p',s:'Qual letra falta em C_SA, a palavra da casinha?',v:'🏠',n:0,o:['A','U','E','O'],a:'A',h:['Diga a palavra devagar: CA-SA.','Qual vogal faz o som de a em CASA?','Dica final: C junto com A forma CA, como em CAMA!']},
+{c:'p',s:'Qual palavra rima com MÃO?',v:'✋',n:0,o:['PÃO','BOLA','CASA'],a:'PÃO',h:['Fale MÃO e depois as outras palavras bem devagar.','Rima é quando as palavras terminam com o mesmo som.','Dica final: procure a palavra que termina com ÃO!']},
+{c:'p',s:'Qual letra começa a palavra BOLA?',v:'⚽',n:0,o:['B','D','P'],a:'B',h:['Diga BOLA bem devagar: BBB... OLA.','Procure a letra que faz o som de bê.','Dica final: é a letra B, a mesma de BOLA e de BEBÊ!']},
+{c:'l',s:'Qual figura vem depois? Veja o padrão de cores: vermelho, azul, vermelho, azul, vermelho.',v:'🔴 🔵 🔴 🔵 🔴 ❓',n:0,o:['🟢','🔴','🔵'],a:'🔵',h:['Veja a ordem das cores com atenção.','Depois de cada vermelho vem sempre um azul.','Dica final: o último foi vermelho, então o próximo é o azul!']},
+{c:'l',s:'Qual número vem depois na sequência?',v:'2 ➜ 4 ➜ 6 ➜ 8 ➜ ❓',n:0,o:[9,10,12],a:10,h:['Veja quanto aumenta de um número para o outro.','De 2 para 4 aumenta 2. De 4 para 6 também aumenta 2.','Dica final: some 2 ao número 8. Quanto dá?']},
+{c:'l',s:'Qual figura NÃO pertence ao grupo das frutas?',v:'🍎 🍌 🍇 🚗',n:0,o:['🍌','🚗','🍇'],a:'🚗',h:['Olhe bem para todas as figuras.','Três delas são frutas. Uma não é fruta!','Dica final: o carrinho não é fruta, então ele é o que não pertence ao grupo!']},
+{c:'l',s:'Qual figura vem depois? Repare nas estrelas e na lua!',v:'⭐ 🌙 ⭐ 🌙 ⭐ ❓',n:0,o:['⭐','☀️','🌙'],a:'🌙',h:['Repare que a estrela e a lua se repetem.','Depois da estrela vem a lua. E depois da lua vem qual?','Dica final: a ordem é estrela, lua, estrela, lua... então o próximo é a lua!']},
+{c:'l',s:'Qual número vem depois na sequência?',v:'1 ➜ 3 ➜ 5 ➜ ❓',n:0,o:[6,7,9],a:7,h:['Veja quanto aumenta de um número para o outro.','De 1 para 3 aumenta 2. De 3 para 5 também aumenta 2!','Dica final: some 2 ao número 5. Quanto dá?']},
+{c:'p',s:'Qual figura começa com a letra V?',v:'🔤',n:0,o:['🐮 VACA','🐟 PEIXE','🐘 ELEFANTE'],a:'🐮 VACA',h:['Diga o nome de cada figura em voz alta.','Escute o primeiro som: VVV de VACA!','Dica final: procure o bichinho cujo nome começa com V, como VACA!']},
+{c:'p',s:'Quantas letras tem a palavra SOL?',v:'☀️',n:0,o:[2,3,4],a:3,h:['Soletre devagar: S... O... L.','Cada letrinha conta! Quantas são?','Dica final: conte com os dedinhos: S, O, L!']},
+{c:'p',s:'Qual figura começa com a letra F?',v:'🔥',n:0,o:['🍇 UVA','🐸 SAPO','🔥 FOGO'],a:'🔥 FOGO',h:['Fale o nome de cada figura bem devagar.','Procure a figura cujo nome começa com o som de fê.','Dica final: a chama tem nome que começa com F, como FOGO!']},
+{c:'l',s:'Qual figura vem depois? Repare no padrão de cores.',v:'🟡 🟡 🟢 🟡 🟡 🟢 🟡 ❓',n:0,o:['🟢','🟡','🔴'],a:'🟡',h:['Veja o padrão: amarelo, amarelo, verde, e se repete.','Depois do verde volta o amarelo, amarelo, verde.','Dica final: o próximo da sequência também é amarelo!']},
+{c:'l',s:'Qual figura NÃO pertence ao grupo?',v:'🔺 🔺 🔵 🔺',n:0,o:['🔺','🔵','⬜'],a:'🔵',h:['Olhe a forma de cada figura com atenção.','Três delas são triângulos. Uma é redonda!','Dica final: o círculo azul não é triângulo, então ele não pertence ao grupo!']},
+{c:'l',s:'Qual número vem depois na sequência?',v:'5 ➜ 10 ➜ 15 ➜ 20 ➜ ❓',n:0,o:[22,25,30],a:25,h:['Veja quanto aumenta de um número para o outro.','De 5 para 10 aumenta 5. De 10 para 15 também aumenta 5!','Dica final: some 5 ao número 20. Quanto dá?']}
+];
+
+let cat='m',fila=[],i=0,acertos=0,w=0;
+const $=id=>document.getElementById(id);
+const shuffle=a=>{a=[...a];for(let k=a.length-1;k>0;k--){const j=Math.random()*(k+1)|0;[a[k],a[j]]=[a[j],a[k]]}return a};
+const clean=t=>String(t).replace(/[^\p{L}\p{N}\s]/gu,'').trim();
+function tela(id){document.querySelectorAll('.tela').forEach(t=>t.classList.toggle('on',t.id===id))}
+
+/* ---------- Áudio (narração) ---------- */
+function falar(t){
+  if(window.AndroidTTS){try{AndroidTTS.speak(t)}catch(e){}return}
+  if(!window.speechSynthesis)return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);u.lang='pt-BR';u.rate=.9;u.pitch=1.1;
+  const v=speechSynthesis.getVoices().find(x=>/^pt[-_]BR/i.test(x.lang));
+  if(v)u.voice=v;
+  speechSynthesis.speak(u);
+}
+function falarPerg(){const q=fila[i];falar(q.s+' As opções são: '+q.o.map(clean).filter(Boolean).join(', ')+'.')}
+
+/* ---------- Sons ---------- */
+let ac;
+function som(f,d,t=0){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain(),s=ac.currentTime+t;o.frequency.value=f;g.gain.setValueAtTime(.2,s);g.gain.exponentialRampToValueAtTime(.001,s+d);o.connect(g);g.connect(ac.destination);o.start(s);o.stop(s+d)}catch(e){}}
+const acorde=()=>{som(523,.25);som(659,.25,.18);som(784,.5,.36)};
+
+/* ---------- Fogos ---------- */
+const cv=$('fx'),cx=cv.getContext('2d');let P=[],raf=0;
+const ajusta=()=>{cv.width=innerWidth;cv.height=innerHeight};ajusta();addEventListener('resize',ajusta);
+const CORES=['#f472b6','#fbbf24','#34d399','#60a5fa','#a78bfa','#fb7185'];
+function explode(x,y){const c=CORES[Math.random()*6|0];for(let k=0;k<50;k++){const a=Math.random()*6.283,s=1+Math.random()*4.5;P.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1,c})}if(!raf)loop()}
+function loop(){cx.clearRect(0,0,cv.width,cv.height);P=P.filter(p=>p.l>0);P.forEach(p=>{p.vy+=.07;p.x+=p.vx;p.y+=p.vy;p.vx*=.98;p.l-=.016;cx.globalAlpha=Math.max(p.l,0);cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,3.2,0,6.283);cx.fill()});cx.globalAlpha=1;raf=P.length?requestAnimationFrame(loop):0}
+function fogos(){let k=0;const t=setInterval(()=>{explode(Math.random()*cv.width,Math.random()*cv.height*.6+60);if(++k>=6)clearInterval(t)},380)}
+
+/* ---------- Jogo ---------- */
+function iniciar(c){cat=c;const base=c==='t'?[...Q,gerarMat(),gerarMat()]:c==='m'?[...Q.filter(q=>q.c==='m'),gerarMat(),gerarMat(),gerarMat()]:Q.filter(q=>q.c===c);fila=shuffle(base).slice(0,5);i=0;acertos=0;tela('jogo');mostrar()}
+
+function desenhar(q){
+  const v=$('vis');
+  if(q.n)v.innerHTML=Array.from({length:q.n},(_,k)=>`<span class="it${q.r&&w>=2&&k>=q.n-q.r?' risc':''}">${q.v}</span>`).join('');
+  else v.textContent=q.v;
+}
+
+function mostrar(){
+  const q=fila[i];w=0;
+  $('prog').textContent=`${i+1}/${fila.length}`;
+  $('pts').textContent='⭐ '+acertos;
+  desenhar(q);
+  $('enun').textContent=q.s;
+  $('msg').textContent='Escute e escolha a resposta! 👂';
+  $('prox').style.display='none';
+  const ops=$('ops');ops.innerHTML='';
+  shuffle(q.o).forEach(o=>{const b=document.createElement('button');b.className='op';b.textContent=o;b.onclick=()=>escolher(b,q);ops.appendChild(b)});
+  falarPerg();
+}
+
+function escolher(b,q){
+  if(b.disabled)return;
+  if(b.textContent===String(q.a)){
+    b.classList.add('certo');
+    document.querySelectorAll('.op').forEach(x=>x.disabled=true);
+    acertos++;$('pts').textContent='⭐ '+acertos;
+    const m=['Parabéns! Você acertou!','Muito bem! Isso mesmo!','Uau, que esperto você é!'][Math.random()*3|0];
+    $('msg').textContent='🎉 '+m+' 🎉';falar(m);acorde();fogos();
+    $('prox').textContent=i===fila.length-1?'Ver resultado 🏆':'Próxima ➜';
+    $('prox').style.display='block';
+  }else{
+    w++;b.classList.add('errado');b.disabled=true;som(220,.35);
+    desenhar(q);
+    const h=q.h[Math.min(w-1,2)];
+    $('msg').textContent='💪 Tente de novo! '+h;falar('Tente de novo! '+h);
+    if(w>=3)document.querySelectorAll('.op').forEach(x=>{if(x.textContent===String(q.a))x.classList.add('dica')});
+  }
+}
+
+function prox(){i++;i<fila.length?mostrar():fim()}
+function fim(){
+  tela('fim');
+  const n=acertos;
+  $('final').textContent=`Você acertou ${n} de ${fila.length}! ⭐`;
+  prog.estrelas+=n;prog.rodadas++;
+  const livres=ADES.map((_,k)=>k).filter(k=>!prog.adesivos.includes(k));
+  if(n>=3&&livres.length){
+    const g=livres[Math.random()*livres.length|0];prog.adesivos.push(g);
+    $('novo').textContent=ADES[g];
+    $('ganhou').textContent='🎉 Você ganhou um adesivo novo!';
+    falar('Uau! Você ganhou um adesivo novo!');
+  }else{
+    $('novo').textContent='';
+    $('ganhou').textContent=n>=3?'Você já tem todos os adesivos! 🏆':'Quase lá! Faça mais uma rodada para ganhar um adesivo.';
+    falar('Parabéns! Você terminou a aventura!');
+  }
+  salvar();fogos();
+}
+
+const ADES=['🦁','🐶','🐱','🦄','🐸','🐼','🚀','🌈','🏆','⭐','🍭','🎈'];
+let prog={nome:'',estrelas:0,rodadas:0,adesivos:[]};
+try{prog={...prog,...JSON.parse(localStorage.getItem('aventuras')||'{}')}}catch(e){}
+function salvar(){try{localStorage.setItem('aventuras',JSON.stringify(prog))}catch(e){}}
+function atualizaMenu(){
+  $('ola').textContent=prog.nome?`Olá, ${prog.nome}!`:'Olá, amiguinho!';
+  $('nome').value=prog.nome;
+  $('resumo').textContent=`⭐ ${prog.estrelas} estrelas • 🏅 ${prog.adesivos.length}/12 adesivos`;
+}
+function nomeMudou(v){prog.nome=v.trim().slice(0,15);salvar();atualizaMenu()}
+function mostrarAdes(){
+  $('grade').innerHTML=ADES.map((a,k)=>{const ok=prog.adesivos.includes(k);return `<div class="ade${ok?'':' lock'}">${ok?a:'🔒'}</div>`}).join('');
+  tela('ades');
+}
+function gerarMat(){
+  const [nm,e]=[['biscoitos','🍪'],['balas','🍬'],['maçãs','🍎'],['estrelas','⭐'],['peixinhos','🐟']][Math.random()*5|0];
+  const nome=['Lucas','Lia','Beto','Clara','Théo'][Math.random()*5|0];
+  const x=2+(Math.random()*7|0),y=1+(Math.random()*(9-x)|0),T=x+y;
+  if(Math.random()<.5)return {c:'m',s:`${nome} tinha ${T} ${nm}. Deu ${y} para um amigo. Quantos ${nm} sobraram?`,v:e,n:T,r:y,o:[x,x+1,x+2,x-1],a:x,h:[`Conte os ${T} ${nm} que ${nome} tinha.`,`Os ${y} riscados foram para um amigo. Quantos ainda estão com ${nome}?`,`Dica final: comece no ${T} e conte para trás ${y} vezes!`]};
+  return {c:'m',s:`${nome} tinha ${x} ${nm} e ganhou mais ${y}. Quantos ${nm} tem agora?`,v:e,n:T,r:0,o:[T,T+1,T-1,T+2],a:T,h:[`Conte os ${x} ${nm} que ${nome} já tinha.`,`Agora some os ${y} que ganhou. Conte tudo junto!`,`Dica final: a partir do ${x}, conte mais ${y}!`]};
+}
+atualizaMenu();
+</script>
+</body>
+</html>
